@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // सुनिश्चित करें कि models/User.js मौजूद है
 
 // Secret key for JWT (इसे .env file से आना चाहिए)
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key'; 
+const JWT_SECRET = process.env.JWT_SECRET || 'MyPasswordIsTheSecretSauceForTrendauraApp2025DAALEIN_12345'; 
 
 // --- 1. User Registration Route ---
 // POST /api/auth/register
@@ -116,3 +116,4 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+
