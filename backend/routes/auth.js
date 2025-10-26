@@ -23,6 +23,8 @@ router.post('/register', async (req, res) => {
         // Check if user already exists
         let user = await User.findOne({ email });
         if (user) {
+            // Log the attempt to use a duplicate email
+            console.error(`REGISTRATION FAILED: Duplicate email attempt for ${email}`);
             return res.status(400).json({ msg: 'User already exists with this email.' });
         }
 
@@ -33,7 +35,7 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
 
-        // Save the user to the database
+        // Save the user to the database -- may still trigger duplicate key error in rare race conditions
         await user.save();
 
         // Create and sign a JWT Token
@@ -52,10 +54,21 @@ router.post('/register', async (req, res) => {
             }
         );
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error during registration.');
+        // 🛑 CRITICAL FIX: Detailed error logging
+        console.error('SERVER ERROR DURING REGISTRATION:', err);
+
+        // Duplicate key error (E11000) handling
+        if (err.code === 11000) {
+            // Log duplicate error details for support/debugging
+            console.error(`E11000 DUPLICATE KEY ERROR: Email "${email}" attempted.`);
+            return res.status(400).json({ msg: 'User already exists with this email.' });
+        }
+
+        // Other errors
+        res.status(500).send('Server Error during registration. Please contact support.');
     }
 });
+
 
 // --- 2. User Login Route ---
 // POST /api/auth/login
