@@ -16,20 +16,28 @@ const auth = require('./middleware/auth');
 // Utilities
 const { fetchAndSavePrices } = require('./utils/aggregator');
 
-// Express app initialization
+// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // --- Middleware Setup ---
-app.use(express.json()); // Body parser for JSON
 
-// CORS setup based on environment
-const ALLOWED_ORIGIN = process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL   // Use deployed frontend URL from env
-    : 'http://localhost:3000';   // Use local frontend in development
+// 1. CRITICAL: JSON Parser
+app.use(express.json()); 
 
+// 2. CORS setup for Production/Development
+const ALLOWED_ORIGIN = process.env.NODE_ENV === 'production'
+    ? process.env.FRONTEND_URL  // Live Frontend URL
+    : 'http://localhost:3000';  // Local Frontend
+
+// 💡 FINAL CORS FIX: Explicitly setting methods and headers for preflight requests
 app.use(cors({
     origin: ALLOWED_ORIGIN,
+    // Methods ki list jinhe aap support karte hain
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+    // Headers ki list jinhe aap support karte hain (JWT token ke liye zaroori)
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'], 
+    // Credentials ko allow karna zaroori nahi hai, lekin preflight ke liye ye settings zaroori hain.
 }));
 
 // --- Environment Variable Checks ---
