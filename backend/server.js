@@ -32,12 +32,9 @@ const ALLOWED_ORIGIN = process.env.NODE_ENV === 'production'
 
 // 💡 FINAL CORS FIX: Explicitly setting methods and headers for preflight requests
 app.use(cors({
-    origin: ALLOWED_ORIGIN,
-    // Methods ki list jinhe aap support karte hain
+   origin: '*', // 🛑 TEMPORARY: Allow all origins (This should fix the CORS error immediately)
     methods: ['GET', 'POST', 'PUT', 'DELETE'], 
-    // Headers ki list jinhe aap support karte hain (JWT token ke liye zaroori)
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'], 
-    // Credentials ko allow karna zaroori nahi hai, lekin preflight ke liye ye settings zaroori hain.
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
 }));
 
 // --- Environment Variable Checks ---
@@ -82,3 +79,4 @@ app.get('/', (req, res) => {
 
 // --- Server Start ---
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+
