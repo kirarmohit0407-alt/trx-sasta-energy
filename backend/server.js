@@ -22,7 +22,7 @@ const PORT = process.env.PORT || 5000;
 
 // --- Middleware Setup ---
 
-// 1. CRITICAL: JSON Parser
+// 1. CRITICAL: JSON Parser (Must be first)
 app.use(express.json()); 
 
 // 2. CORS setup for Production/Development
@@ -30,21 +30,14 @@ const ALLOWED_ORIGIN = process.env.NODE_ENV === 'production'
     ? process.env.FRONTEND_URL
     : 'http://localhost:3000';
 
-// 💡 FIX 1: Universal CORS with Explicit Headers
+// 💡 FINAL FIX: Simple and Robust CORS Configuration
+// cors() middleware hi preflight (OPTIONS) request ko handle karta hai.
 app.use(cors({
-    origin: '*', // Allow all origins to resolve preflight issues
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // OPTIONS method ko explicitly allow karein
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'], 
+    origin: ALLOWED_ORIGIN, // Vercel se mila specific URL ya localhost
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Sabhi methods allow karein
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'], // Required headers
+    credentials: true // Agar aap cookies ya session tokens use karte
 }));
-
-// 💡 FIX 2: Manually handle OPTIONS requests (CRITICAL FOR LIVE CORS FIX)
-// Render par yeh ensure karta hai ki preflight requests (OPTIONS) ko turant 200 OK mile.
-app.options('*', (req, res) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token');
-    res.sendStatus(200);
-});
 // ----------------------------------------------------------------------
 
 // --- Environment Variable Checks ---
@@ -89,3 +82,4 @@ app.get('/', (req, res) => {
 
 // --- Server Start ---
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+
