@@ -27,15 +27,25 @@ app.use(express.json());
 
 // 2. CORS setup for Production/Development
 const ALLOWED_ORIGIN = process.env.NODE_ENV === 'production'
-    ? process.env.FRONTEND_URL  // Live Frontend URL
-    : 'http://localhost:3000';  // Local Frontend
+    ? process.env.FRONTEND_URL
+    : 'http://localhost:3000';
 
-// 💡 FINAL CORS FIX: Explicitly setting methods and headers for preflight requests
+// 💡 FIX 1: Universal CORS with Explicit Headers
 app.use(cors({
-   origin: '*', // 🛑 TEMPORARY: Allow all origins (This should fix the CORS error immediately)
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], 
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    origin: '*', // Allow all origins to resolve preflight issues
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // OPTIONS method ko explicitly allow karein
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'], 
 }));
+
+// 💡 FIX 2: Manually handle OPTIONS requests (CRITICAL FOR LIVE CORS FIX)
+// Render par yeh ensure karta hai ki preflight requests (OPTIONS) ko turant 200 OK mile.
+app.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token');
+    res.sendStatus(200);
+});
+// ----------------------------------------------------------------------
 
 // --- Environment Variable Checks ---
 if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
@@ -79,4 +89,3 @@ app.get('/', (req, res) => {
 
 // --- Server Start ---
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
-
