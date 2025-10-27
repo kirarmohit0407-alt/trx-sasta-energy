@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
 
         // 2. Create new user instance & Hash the password
         user = new User({ email, password });
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(5);
         user.password = await bcrypt.hash(password, salt);
 
         // 3. Save the user (This is where final E11000 can be thrown)
@@ -120,5 +120,6 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+
 
 
