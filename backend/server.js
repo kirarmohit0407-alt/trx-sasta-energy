@@ -1,7 +1,6 @@
 // server.js
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
 
@@ -22,29 +21,29 @@ const PORT = process.env.PORT || 5000;
 
 // --- Middleware Setup ---
 
-// JSON Parser (must be first)
+// 1. JSON Parser (must be first)
 app.use(express.json());
 
-// --- ROBUST CORS MIDDLEWARE ---
+// 2. Robust CORS Handling (update allowedOrigins with your prod domain)
 const allowedOrigins = [
-    'https://your-frontend-domain.vercel.app', // Update/change domains as needed
+    'https://trx-sasta-energy.vercel.app', // Your frontend deployed domain
     'http://localhost:3000'
 ];
+
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
     }
-    // Always set these for clarity; adjust for credentials if needed
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-auth-token');
-    // Return immediately for preflight requests
+    // If using credentials, uncomment below line and set credentials:true in frontend
+    // res.setHeader('Access-Control-Allow-Credentials', 'true');
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
     next();
 });
-// --------------------------------------
 
 // --- Environment Variable Checks ---
 if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
@@ -73,10 +72,8 @@ cron.schedule('*/10 * * * *', () => {
 });
 
 // --- Modular Routes ---
-
 // Public Auth routes
 app.use('/api/auth', authRoutes);
-
 // Protected routes (JWT required)
 app.use('/api', auth, historyRoutes);
 app.use('/api', auth, comparisonRoutes);
@@ -88,6 +85,8 @@ app.get('/', (req, res) => {
 
 // --- Server Start ---
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+
+
 
 
 
