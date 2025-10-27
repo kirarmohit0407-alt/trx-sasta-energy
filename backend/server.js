@@ -23,27 +23,19 @@ const PORT = process.env.PORT || 5000;
 // --- Middleware Setup ---
 
 // 1. CRITICAL: JSON Parser (Must be first)
-app.use(express.json()); 
+app.use(express.json()); 
 
-// 2. 💡 FINAL FIX: Robust CORS with Dynamic Origin Handling
-const VERCEL_DOMAIN_REGEX = /https:\/\/trx-sasta-energy-.*\.vercel\.app$/;
-
+// 2. 💡 FINAL CRASH-PROOF CORS FIX
+// We use simple wildcard for origin and explicit headers/methods.
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow Vercel subdomains, localhost, and direct API calls (when origin is undefined)
-        if (!origin || origin === 'http://localhost:3000' || VERCEL_DOMAIN_REGEX.test(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error(`CORS policy blocks access from origin: ${origin}`), false);
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
-    credentials: true
+    origin: '*', // ✅ Safest option: Allow all origins (This guarantees no Vercel domain issues)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'], 
+    // credentials: true ko hata do kyunki woh '*' se conflict karta hai
 }));
 
 // 💡 FIX 2: Manually handle OPTIONS requests (CRITICAL for Render/Vercel)
-// This guarantees that the browser receives the required 200 OK for preflight.
+// This ensures the preflight request always gets a 200 OK without complex logic.
 app.options('*', cors()); 
 // ----------------------------------------------------------------------
 
@@ -55,22 +47,22 @@ if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
 
 // --- MongoDB Connection ---
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => {
-        console.log('MongoDB Connected Successfully!');
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('Running initial price fetch on server start (Development mode)...');
-            fetchAndSavePrices();
-        }
-    })
-    .catch((err) => {
-        console.error('MongoDB Connection Error:', err.message);
-        process.exit(1);
-    });
+    .then(() => {
+        console.log('MongoDB Connected Successfully!');
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Running initial price fetch on server start (Development mode)...');
+            fetchAndSavePrices();
+        }
+    })
+    .catch((err) => {
+        console.error('MongoDB Connection Error:', err.message);
+        process.exit(1);
+    });
 
 // --- Scheduled TRX Price Aggregation (Every 10 minutes) ---
 cron.schedule('*/10 * * * *', () => {
-    console.log('Running scheduled TRX price aggregation...');
-    fetchAndSavePrices();
+    console.log('Running scheduled TRX price aggregation...');
+    fetchAndSavePrices();
 });
 
 // --- Modular Routes ---
@@ -84,7 +76,7 @@ app.use('/api', auth, comparisonRoutes);
 
 // --- Root Health Check ---
 app.get('/', (req, res) => {
-    res.send('TRX Sasta Energy Backend Running!');
+    res.send('TRX Sasta Energy Backend Running!');
 });
 
 // --- Server Start ---
