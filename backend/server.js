@@ -22,22 +22,29 @@ const PORT = process.env.PORT || 5000;
 
 // --- Middleware Setup ---
 
-// 1. CRITICAL: JSON Parser (Must be first)
-app.use(express.json()); 
+// JSON Parser (must be first)
+app.use(express.json());
 
-// 2. 💡 FINAL CRASH-PROOF CORS FIX
-// We use simple wildcard for origin and explicit headers/methods.
-app.use(cors({
-    origin: '*', // ✅ Safest option: Allow all origins (This guarantees no Vercel domain issues)
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'], 
-    // credentials: true ko hata do kyunki woh '*' se conflict karta hai
-}));
-
-// 💡 FIX 2: Manually handle OPTIONS requests (CRITICAL for Render/Vercel)
-// This ensures the preflight request always gets a 200 OK without complex logic.
-app.options('*', cors()); 
-// ----------------------------------------------------------------------
+// --- ROBUST CORS MIDDLEWARE ---
+const allowedOrigins = [
+    'https://your-frontend-domain.vercel.app', // Update/change domains as needed
+    'http://localhost:3000'
+];
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    // Always set these for clarity; adjust for credentials if needed
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-auth-token');
+    // Return immediately for preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+// --------------------------------------
 
 // --- Environment Variable Checks ---
 if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
@@ -81,5 +88,6 @@ app.get('/', (req, res) => {
 
 // --- Server Start ---
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+
 
 
