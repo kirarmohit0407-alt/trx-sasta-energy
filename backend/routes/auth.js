@@ -1,14 +1,11 @@
-// routes/auth.js
-// routes/auth.js
+// routes/auth.js (Finalized Bypass Code)
 
 const express = require('express');
 const router = express.Router();
-// bcrypt और jwt अभी भी इंपोर्टेड हैं, लेकिन bcrypt का उपयोग हटा दिया गया है।
 const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); 
 
-// Secret key for JWT 
 const JWT_SECRET = process.env.JWT_SECRET || 'MyPasswordIsTheSecretSauceForTrendauraApp2025DAALEIN_12345'; 
 
 // --- 1. User Registration Route ---
@@ -30,13 +27,11 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ msg: 'User already exists with this email.' });
         }
 
-        // 2. Create new user instance
+        // 2. Create new user instance (Note: No hashing)
         user = new User({ email, password });
         
-        // 🛑 BYPASS FIX: Hashing logic ko hata diya gaya hai. Password plain text mein save hoga.
-        // user.password = await bcrypt.hash(password, salt); // Hashed password line removed
-        
-        user.password = password; // 💡 NEW TEMPORARY FIX: Save the password as plain text (UNSAFE)
+        // 🛑 BYPASS FIX: Password plain text में सेव हो रहा है (UNSAFE)
+        user.password = password; 
 
         // 3. Save the user
         await user.save();
@@ -45,10 +40,7 @@ router.post('/register', async (req, res) => {
         // 4. Create and sign a JWT Token
         const payload = { userId: user.id };
 
-        jwt.sign(
-            payload,
-            JWT_SECRET,
-            { expiresIn: '1d' }, 
+        jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' }, 
             (err, token) => {
                 if (err) {
                     console.error('JWT Signing Error:', err);
@@ -61,7 +53,7 @@ router.post('/register', async (req, res) => {
             }
         );
     } catch (err) {
-        // Final Error Handling for Mongoose/Bcrypt errors
+        // Handle E11000 or other DB write issues
         if (err.code && err.code === 11000) {
             return res.status(400).json({ msg: 'User already exists with this email.' });
         }
@@ -86,8 +78,8 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ msg: 'Invalid Credentials.' });
         }
         
-        // 🛑 BYPASS FIX: Bcrypt compare ki jagah simple string compare karo
-        const isMatch = (password === user.password); // Simple plain text string match
+        // 🛑 BYPASS FIX: Simple string compare
+        const isMatch = (password === user.password); 
         
         if (!isMatch) {
             return res.status(400).json({ msg: 'Invalid Credentials.' });
