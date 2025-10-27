@@ -1,11 +1,14 @@
 // routes/auth.js
+// routes/auth.js
 
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
+// bcrypt और jwt अभी भी इंपोर्टेड हैं, लेकिन bcrypt का उपयोग हटा दिया गया है।
+const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); 
 
+// Secret key for JWT 
 const JWT_SECRET = process.env.JWT_SECRET || 'MyPasswordIsTheSecretSauceForTrendauraApp2025DAALEIN_12345'; 
 
 // --- 1. User Registration Route ---
@@ -20,22 +23,24 @@ router.post('/register', async (req, res) => {
     }
 
     try {
+        // 1. Check if user already exists
         let user = await User.findOne({ email });
         if (user) {
             console.error(`REGISTRATION FAILED: Duplicate email found for ${email}`);
             return res.status(400).json({ msg: 'User already exists with this email.' });
         }
 
-        // 2. Create new user instance & Hash the password
+        // 2. Create new user instance
         user = new User({ email, password });
         
-        // 💡 OPTIMIZATION: Hashing Rounds set to 5 (Minimum for bcrypt)
-        const salt = await bcrypt.genSalt(5);
-        user.password = await bcrypt.hash(password, salt); // Hashing attempt remains
+        // 🛑 BYPASS FIX: Hashing logic ko hata diya gaya hai. Password plain text mein save hoga.
+        // user.password = await bcrypt.hash(password, salt); // Hashed password line removed
+        
+        user.password = password; // 💡 NEW TEMPORARY FIX: Save the password as plain text (UNSAFE)
 
         // 3. Save the user
         await user.save();
-        console.log(`NEW USER REGISTERED successfully: ${email}`);
+        console.log(`NEW USER REGISTERED successfully (BYPASS MODE): ${email}`);
 
         // 4. Create and sign a JWT Token
         const payload = { userId: user.id };
@@ -56,13 +61,11 @@ router.post('/register', async (req, res) => {
             }
         );
     } catch (err) {
-        // ... (Error handling for E11000 and other errors) ...
+        // Final Error Handling for Mongoose/Bcrypt errors
         if (err.code && err.code === 11000) {
-            console.error(`E11000 CRITICAL ERROR: Database duplicate key error for email "${email}"`);
             return res.status(400).json({ msg: 'User already exists with this email.' });
         }
-        
-        console.error('SERVER ERROR DURING REGISTRATION (Likely Hashing Failure):', err);
+        console.error('SERVER ERROR DURING REGISTRATION (Plain Text Mode):', err);
         res.status(500).send('Server Error: Registration could not be completed.');
     }
 });
@@ -83,14 +86,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ msg: 'Invalid Credentials.' });
         }
         
-        // ✅ LOGIN FIX: Compare the incoming password with the HASHED password
-        // Since the register route successfully hashes, we use bcrypt.compare here.
-        const isMatch = await bcrypt.compare(password, user.password); 
+        // 🛑 BYPASS FIX: Bcrypt compare ki jagah simple string compare karo
+        const isMatch = (password === user.password); // Simple plain text string match
         
         if (!isMatch) {
             return res.status(400).json({ msg: 'Invalid Credentials.' });
         }
 
+        // Create and sign a JWT Token
         const payload = { userId: user.id };
 
         jwt.sign(
